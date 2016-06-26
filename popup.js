@@ -1,118 +1,123 @@
-// Copyright (c) 2014 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+//This is an extension to add books to quest
 
-/**
- * Get the current URL.
- *
- * @param {function(string)} callback - called when the URL of the current tab
- *   is found.
- */
-function getCurrentTabUrl(callback) {
-  // Query filter to be passed to chrome.tabs.query - see
-  // https://developer.chrome.com/extensions/tabs#method-query
-  var queryInfo = {
-    active: true,
-    currentWindow: true
-  };
-
-  chrome.tabs.query(queryInfo, function(tabs) {
-    // chrome.tabs.query invokes the callback with a list of tabs that match the
-    // query. When the popup is opened, there is certainly a window and at least
-    // one tab, so we can safely assume that |tabs| is a non-empty array.
-    // A window can only have one active tab at a time, so the array consists of
-    // exactly one tab.
-    var tab = tabs[0];
-
-    // A tab is a plain object that provides information about the tab.
-    // See https://developer.chrome.com/extensions/tabs#type-Tab
-    var url = tab.url;
-
-    // tab.url is only available if the "activeTab" permission is declared.
-    // If you want to see the URL of other tabs (e.g. after removing active:true
-    // from |queryInfo|), then the "tabs" permission is required to see their
-    // "url" properties.
-    console.assert(typeof url == 'string', 'tab.url should be a string');
-
-    callback(url);
-  });
-
-  // Most methods of the Chrome extension APIs are asynchronous. This means that
-  // you CANNOT do something like this:
-  //
-  // var url;
-  // chrome.tabs.query(queryInfo, function(tabs) {
-  //   url = tabs[0].url;
-  // });
-  // alert(url); // Shows "undefined", because chrome.tabs.query is async.
-}
-
-/**
- * @param {string} searchTerm - Search term for Google Image search.
- * @param {function(string,number,number)} callback - Called when an image has
- *   been found. The callback gets the URL, width and height of the image.
- * @param {function(string)} errorCallback - Called when the image is not found.
- *   The callback gets a string that describes the failure reason.
- */
-function getImageUrl(searchTerm, callback, errorCallback) {
-  // Google image search - 100 searches per day.
-  // https://developers.google.com/image-search/
-  var searchUrl = 'https://ajax.googleapis.com/ajax/services/search/images' +
-    '?v=1.0&q=' + encodeURIComponent(searchTerm);
-  var x = new XMLHttpRequest();
-  x.open('GET', searchUrl);
-  // The Google image search API responds with JSON, so let Chrome parse it.
-  x.responseType = 'json';
-  x.onload = function() {
-    // Parse and process the response from Google Image Search.
-    var response = x.response;
-    if (!response || !response.responseData || !response.responseData.results ||
-        response.responseData.results.length === 0) {
-      errorCallback('No response from Google Image search!');
-      return;
+function main() {
+	var $courseDetails = $('[class^="PAGROUPDIVIDER"]');
+    if($courseDetails.length == 0){
+        window.setTimeout(main(),10000);
+        return;
     }
-    var firstResult = response.responseData.results[0];
-    // Take the thumbnail instead of the full image to get an approximately
-    // consistent image size.
-    var imageUrl = firstResult.tbUrl;
-    var width = parseInt(firstResult.tbWidth);
-    var height = parseInt(firstResult.tbHeight);
-    console.assert(
-        typeof imageUrl == 'string' && !isNaN(width) && !isNaN(height),
-        'Unexpected respose from the Google Image Search API!');
-    callback(imageUrl, width, height);
-  };
-  x.onerror = function() {
-    errorCallback('Network error.');
-  };
-  x.send();
+    var courses = [];
+    var temp = $('[id^="MTG_SECTION"]');
+    var section = temp[0].innerText;
+    var term = calculateTerm();
+    console.log("Successfully got what we wanted");
+    for(var i = 0; i < $courseDetails.length; i++ ){
+        var spacePos = $courseDetails[i].innerText.indexOf(' ');
+        var dept = $courseDetails[i].innerText.slice(0, spacePos);
+        var no = $courseDetails[i].innerText.slice(spacePos+1, $courseDetails[i].innerText.indexOf(' ',spacePos+1));
+        courses.push(course(dept, no, section, term));
+        console.log(courses[i]);
+    }
+
+    console.log("Sending the requests");
+    var booksPerCourse = [];
+    for(var i = 0; i < courses.length; i++){
+        var c = courses[i].dept + ' ' + courses[i].no;
+        booksPerCourse.push(
+            bookData(
+                course, 
+                loadURLCall(courses[i].dept, courses[i].no, courses[i].section, courses[i].term)));
+    }   
+
+    console.log("All data done....");
+    console.log(booksPerCourse);
 }
 
-function renderStatus(statusText) {
-  document.getElementById('status').textContent = statusText;
+function calculateTerm(){
+    var temp = $('[id^="DERIVED_REGFRM1_SSR_STDNTKEY_DESCR$"]');
+    var termName = temp[0].innerText.slice(0, temp[0].innerText.indexOf(' '));
+    var year = temp[0].innerText.slice(temp[0].innerText.indexOf(' ')+1, temp[0].innerText.indexOf(' ',temp[0].innerText.indexOf(' ')+1));
+    var yearNo = year.slice(year.length - 2,year.length);
+    var season = "0";
+    if ( termName.localeCompare( "Winter")){
+        season = "1";
+    } else if (termName.localeCompare("Spring")){
+        season = "5";
+    } else {
+        season = "9";
+    }
+
+    //var term = new string();
+    var term = "1"+ yearNo + season;
+    return term;
+}
+/*
+function checkQuestPage(callback) {
+
+    var queryInfo = {
+        active: true,
+        currentWindow: true
+    };
+
+    chrome.tabs.query(queryInfo, function(tabs) {
+        var tab = tabs[0];
+        var url = tab.url;
+
+        console.assert(typeof url == 'string', 'tab.url should be a string');
+
+        if (url == "https://quest.pecs.uwaterloo.ca/psp/SS/ACADEMIC/SA/c/SA_LEARNER_SERVICES.SSS_STUDENT_CENTER.GBL?PORTALPARAM_PTCNAV=HC_SSS_STUDENT_CENTER&EOPP.SCNode=SA&EOPP.SCPortal=ACADEMIC&EOPP.SCName=CO_EMPLOYEE_SELF_SERVICE&EOPP.SCLabel=Self%20Service&EOPP.SCPTfname=CO_EMPLOYEE_SELF_SERVICE&FolderPath=PORTAL_ROOT_OBJECT.CO_EMPLOYEE_SELF_SERVICE.HC_SSS_STUDENT_CENTER&IsFolder=false") {
+            console.log(1);
+            callback(true)
+        }else{
+            console.log(2);
+            callback(false);     
+        }
+    })
+};
+*/
+function course(idept, ino, isection, iterm) {
+    var obj = {
+        dept : idept,
+        no : ino,
+        section : isection,
+        term : iterm
+    }
+
+    return obj;
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  getCurrentTabUrl(function(url) {
-    // Put the image URL in Google search.
-    renderStatus('Performing Google Image search for ' + url);
+function bookData(Course, books){
+  var obj = {
+    course : course,
+    profSection : books.profSection,
+    author : books.author,
+    title : books.title,
+    sku : books.sku,
+    price : books.price,
+    stock : books.stock
+  }
+  /*
+  this.course = course;
+  this.profSection = books.profSection;
+  this.author = books.author;
+  this.title = books.title;
+  this.sku = books.sku;
+  this.price = books.price;
+  this.stock = books.stock;*/
 
-    getImageUrl(url, function(imageUrl, width, height) {
+  return obj;
+}
 
-      renderStatus('Search term: ' + url + '\n' +
-          'Google image search result: ' + imageUrl);
-      var imageResult = document.getElementById('image-result');
-      // Explicitly set the width/height to minimize the number of reflows. For
-      // a single image, this does not matter, but if you're going to embed
-      // multiple external images in your page, then the absence of width/height
-      // attributes causes the popup to resize multiple times.
-      imageResult.width = width;
-      imageResult.height = height;
-      imageResult.src = imageUrl;
-      imageResult.hidden = false;
+function getCourseDetails(callback){
+    console.log("Attempting to get Course Details");
+    //var $courseNames = $('[class^="PAGROUPDIVIDER"]');
+    var $courseNames = $('[id^="DERIVED_REGFRM1_DESCR20"]');
+    
+    while($courseNames.length === 0){
+        $courseNames = $('[id^="DERIVED_REGFRM1_DESCR20"]');
+    }
 
-    }, function(errorMessage) {
-      renderStatus('Cannot display image. ' + errorMessage);
-    });
-  });
-});
+    console.log("Success...returning raw details");
+    callback($courseNames);
+};
+main();

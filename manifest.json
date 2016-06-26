@@ -1,16 +1,31 @@
 {
   "manifest_version": 2,
 
-  "name": "Getting started example",
-  "description": "This extension shows a Google Image search result for the current page",
+  "name": "EngHack 2016",
+  "description": "This extension adds the required books for a course",
   "version": "1.0",
 
   "browser_action": {
     "default_icon": "icon.png",
-    "default_popup": "popup.html"
+    //"default_popup": "popup.html",
+    "default_title": "Click here"
   },
+
+  "background": {
+        "scripts": ["request.js"],
+        "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://quest.pecs.uwaterloo.ca/*"],
+      "css": [],
+      "js": ["jquery-2.1.4.js", "request.js", "popup.js"],
+      "all_frames": true
+    }
+  ],
   "permissions": [
     "activeTab",
-    "https://ajax.googleapis.com/"
+    "https://ajax.googleapis.com/",
+    "https://fortuna.uwaterloo.ca/*"
   ]
 }
