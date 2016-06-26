@@ -33,30 +33,31 @@ function loadURL(callback){
 
      if (!response || !response.responseData || !response.responseData.results ||
          response.responseData.results.length === 0) {
-       //errorCallback('No response from Google Image search!');
+       
        console.log("Something went wrong");
-       callback("HolyShit");
-       //return;
-     }
+       callback("Empty result");
+ 
+     }else{
       
-      console.log("Parsing response");
-      profSection = response.getElementsByClassName('book_subsection').getElementsByTagName('h2');
-      //bookSection = response.getElementsByClassName('book_section');
-      author = response.getElementsByClassName('author');
-      title = response.getElementsByClassName('title');
-      sku = response.getElementsByClassName('sku');
-      price = response.getElementsByClassName('price');
-      stock = response.getElementsByClassName('stock');
-      //console.log(response) ;
+         console.log("Parsing response");
+         profSection = response.getElementsByClassName('book_subsection').getElementsByTagName('h2');
+      
+         author = response.getElementsByClassName('author');
+         title = response.getElementsByClassName('title');
+         sku = response.getElementsByClassName('sku');
+         price = response.getElementsByClassName('price');
+         stock = response.getElementsByClassName('stock');
+         //console.log(response) ;
 
-      var books = bookData(book_section , author , title , sku , price, stock);
-      console.log(books);
-      callback(books);
+         var books = bookData(book_section , author , title , sku , price, stock);
+         console.log(books);
+         callback(books);
+              
+     }
 }
 
 function bookData(book_section , author , title , sku , price, stock ){
   this.profSection = profSection;
-  //this.book_section = book_section;
   this.author = author;
   this.title = title;
   this.sku = sku;
@@ -72,11 +73,9 @@ function  loadURLCall(dept, courseNo, sectionNo, trm){
   sectionNumber = sectionNo;
 
   loadURL(function(books){
-      if (books === "HolyShit"){
-          console.log("All hell break loose");
+      if (books === "Empty result"){
           return null;
       }else{
-          console.log("Something's in there...hmmm");
           return books;
     }
   }); 
