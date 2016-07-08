@@ -1,11 +1,10 @@
-         console.log(requestURL.responseXML.documentElement);
+console.log(requestURL.responseXML.documentElement);
 /**
 *        function to goto a particular URL and perform the operations
-*
 **/
+
 var url = "https://fortuna.uwaterloo.ca/cgi-bin/cgiwrap/rsic/book/search.html";
 var profSection = 'N/A' ;
-//var book_section = 'N/A';
 var author = 'N/A';
 var title = 'N/A';
 var sku = '';
@@ -37,7 +36,7 @@ function loadURL(callback){
        console.log("Something went wrong");
        callback("Empty result");
  
-     }else{
+     } else {
       
          console.log("Parsing response");
          profSection = response.getElementsByClassName('book_subsection').getElementsByTagName('h2');
@@ -47,12 +46,10 @@ function loadURL(callback){
          sku = response.getElementsByClassName('sku');
          price = response.getElementsByClassName('price');
          stock = response.getElementsByClassName('stock');
-         //console.log(response) ;
 
          var books = bookData(book_section , author , title , sku , price, stock);
          console.log(books);
          callback(books);
-              
      }
 }
 
